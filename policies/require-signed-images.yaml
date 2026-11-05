@@ -1,0 +1,53 @@
+# Blocks any pod whose image is not signed with our Cosign key.
+# This is the centerpiece of the demo: an unsigned image is rejected
+# at admission time, not caught later in an audit.
+#
+# The public key below is filled in automatically by
+# scripts/generate-cosign-key.sh. cluster/bootstrap.sh skips this policy
+# while the placeholder is still present.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-signed-images
+  annotations:
+    policies.kyverno.io/title: Require Signed Images
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/description: >-
+      Images deployed to regulated namespaces must be signed with Cosign
+      using the project's public key. Supports the integrity and
+      accountability safeguards expected under Kenya's Data Protection Act.
+spec:
+  background: false
+  webhookTimeoutSeconds: 30
+  rules:
+    - name: check-image-signature
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "demo-*"
+              operations:
+                - CREATE
+                - UPDATE
+      verifyImages:
+        - failureAction: Enforce
+          imageReferences:
+            - "ghcr.io/*/policy-as-code-dpa*"
+          attestors:
+            - count: 1
+              entries:
+                - keys:
+                    publicKeys: |-
+                      -----BEGIN PUBLIC KEY-----
+                      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE55NpVjD6uocj5+fvVvWNlX2UXoQa
+                      Y1LL1KRV9giaa61KBQM9jMzCYpHVFWFjGdDpk6QtxMr7rE+kRVr2IW8q0g==
+                      -----END PUBLIC KEY-----
+                    # Key-based signing: don't require a public Rekor
+                    # transparency-log entry (data-sovereignty setup).
+                    rekor:
+                      ignoreTlog: true
+                    ctlog:
+                      ignoreSCT: true

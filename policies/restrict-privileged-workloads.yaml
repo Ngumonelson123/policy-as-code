@@ -1,0 +1,53 @@
+# Baseline hardening: no privileged containers, no running as root.
+# Maps to the DPA's "appropriate technical measures" requirement.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-privileged-workloads
+  annotations:
+    policies.kyverno.io/title: Restrict Privileged Workloads
+    policies.kyverno.io/category: Pod Security
+    policies.kyverno.io/severity: high
+spec:
+  background: true
+  rules:
+    - name: disallow-privileged
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "demo-*"
+              operations:
+                - CREATE
+                - UPDATE
+      validate:
+        failureAction: Enforce
+        message: "Privileged containers are not allowed."
+        pattern:
+          spec:
+            =(initContainers):
+              - =(securityContext):
+                  =(privileged): "false"
+            containers:
+              - =(securityContext):
+                  =(privileged): "false"
+    - name: require-non-root
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "demo-*"
+              operations:
+                - CREATE
+                - UPDATE
+      validate:
+        failureAction: Enforce
+        message: "Containers must not run as root (runAsNonRoot: true required)."
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true

@@ -1,0 +1,38 @@
+# Requires every workload to declare what kind of data it touches and
+# who owns it. This maps to the DPA's accountability and data-minimisation
+# principles: you can't protect data you haven't classified.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-data-classification-labels
+  annotations:
+    policies.kyverno.io/title: Require Data Classification Labels
+    policies.kyverno.io/category: Data Protection
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Every Pod must declare data-classification and owner labels so that
+      data handling can be audited and attributed.
+spec:
+  background: true
+  rules:
+    - name: require-labels
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - "demo-*"
+              operations:
+                - CREATE
+                - UPDATE
+      validate:
+        failureAction: Enforce
+        message: >-
+          Pods must carry labels 'data-classification' (public|internal|
+          confidential|restricted) and 'owner' (team or individual email).
+        pattern:
+          metadata:
+            labels:
+              data-classification: "public | internal | confidential | restricted"
+              owner: "?*"

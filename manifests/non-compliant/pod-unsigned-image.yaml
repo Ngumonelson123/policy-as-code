@@ -1,0 +1,19 @@
+# This pod should be REJECTED: the image is not signed.
+# This is the headline moment of the demo.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: unsigned-app
+  namespace: demo-fintech
+  labels:
+    data-classification: internal
+    owner: platform-team
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+  containers:
+    - name: app
+      image: ghcr.io/REPLACE_ORG/policy-as-code-dpa-app:unsigned
+      securityContext:
+        privileged: false

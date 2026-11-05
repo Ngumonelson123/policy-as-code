@@ -1,0 +1,15 @@
+# This pod should be REJECTED: runs as root and privileged.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: privileged-app
+  namespace: demo-fintech
+  labels:
+    data-classification: internal
+    owner: platform-team
+spec:
+  containers:
+    - name: app
+      image: ghcr.io/REPLACE_ORG/policy-as-code-dpa-app:signed
+      securityContext:
+        privileged: true

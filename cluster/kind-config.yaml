@@ -1,0 +1,13 @@
+# Single-node kind cluster for the demo.
+# Kyverno + the demo pods fit comfortably on one node (~2 GB RAM free).
+# On a bigger machine you can add a worker by uncommenting the last line.
+#
+# No host port mappings: the demo is driven entirely through kubectl, and
+# mapping a fixed host port (e.g. 8080) breaks cluster creation whenever
+# something else on the machine already uses it.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: policy-as-code-dpa
+nodes:
+  - role: control-plane
+#  - role: worker

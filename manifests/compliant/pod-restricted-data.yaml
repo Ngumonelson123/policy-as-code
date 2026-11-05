@@ -1,0 +1,19 @@
+# This pod should be ADMITTED: it handles restricted data, but runs in
+# demo-fintech, which is labelled data-residency=approved.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: restricted-data-app
+  namespace: demo-fintech
+  labels:
+    data-classification: restricted
+    owner: platform-team
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+  containers:
+    - name: app
+      image: ghcr.io/REPLACE_ORG/policy-as-code-dpa-app:signed
+      securityContext:
+        privileged: false

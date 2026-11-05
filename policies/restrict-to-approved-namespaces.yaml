@@ -1,0 +1,48 @@
+# Workloads labelled as handling "restricted" or "confidential" data may
+# only run in namespaces explicitly approved for that classification.
+# Maps to data residency / access-control expectations under the DPA.
+#
+# request.namespace is only the namespace *name*, so the namespace's
+# labels are looked up from the API server via a context apiCall.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-to-approved-namespaces
+  annotations:
+    policies.kyverno.io/title: Restrict Regulated Workloads to Approved Namespaces
+    policies.kyverno.io/category: Data Protection
+    policies.kyverno.io/severity: high
+spec:
+  background: true
+  rules:
+    - name: restricted-data-needs-approved-namespace
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              operations:
+                - CREATE
+                - UPDATE
+              selector:
+                matchExpressions:
+                  - key: data-classification
+                    operator: In
+                    values: ["restricted", "confidential"]
+      context:
+        - name: dataResidency
+          apiCall:
+            urlPath: "/api/v1/namespaces/{{ request.object.metadata.namespace }}"
+            jmesPath: "metadata.labels.\"data-residency\" || ''"
+      validate:
+        failureAction: Enforce
+        message: >-
+          Pods handling restricted or confidential data may only run in
+          namespaces labelled 'data-residency=approved'. Namespace
+          '{{ request.object.metadata.namespace }}' is not approved.
+        deny:
+          conditions:
+            any:
+              - key: "{{ dataResidency }}"
+                operator: NotEquals
+                value: "approved"

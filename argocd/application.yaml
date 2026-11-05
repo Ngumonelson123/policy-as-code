@@ -1,0 +1,23 @@
+# Optional: wire the compliant manifests through Argo CD instead of kubectl apply.
+# Only add this if time allows — the policy enforcement is the real demo,
+# not the delivery mechanism.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: policy-as-code-dpa-demo
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: "REPLACE_WITH_GIT_REMOTE"
+    targetRevision: main
+    path: manifests/compliant
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: demo-fintech
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false

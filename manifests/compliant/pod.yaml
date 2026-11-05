@@ -1,0 +1,18 @@
+# This pod should be ADMITTED: signed image, correct labels, non-root.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: compliant-app
+  namespace: demo-fintech
+  labels:
+    data-classification: internal
+    owner: platform-team
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+  containers:
+    - name: app
+      image: ghcr.io/REPLACE_ORG/policy-as-code-dpa-app:signed
+      securityContext:
+        privileged: false

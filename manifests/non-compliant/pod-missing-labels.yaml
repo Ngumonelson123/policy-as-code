@@ -1,0 +1,15 @@
+# This pod should be REJECTED: no data-classification or owner label.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: unlabelled-app
+  namespace: demo-fintech
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+  containers:
+    - name: app
+      image: ghcr.io/REPLACE_ORG/policy-as-code-dpa-app:signed
+      securityContext:
+        privileged: false

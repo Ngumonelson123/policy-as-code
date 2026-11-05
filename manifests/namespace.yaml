@@ -1,0 +1,14 @@
+# demo-fintech is approved for restricted/confidential data.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo-fintech
+  labels:
+    data-residency: approved
+---
+# demo-sandbox is a regular demo namespace that is NOT approved for
+# restricted/confidential data. Used to show restrict-to-approved-namespaces.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo-sandbox
