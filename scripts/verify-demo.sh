@@ -22,9 +22,17 @@ DEFAULT_REPO="ghcr.io/REPLACE_ORG/policy-as-code-dpa-app"
 
 render() { sed "s|${DEFAULT_REPO}|${IMAGE_REPO}|g" "$1"; }
 
-pass=0; fail=0
+pass=0; fail=0; registry_hint=false
 ok()  { echo "  PASS  $*"; pass=$((pass + 1)); }
 bad() { echo "  FAIL  $*"; fail=$((fail + 1)); }
+
+# Kyverno could not reach the registry (private package / bad credentials).
+# A rejection for this reason proves nothing about the policies.
+# Case-sensitive on purpose: every Kyverno rejection says "...denied the request",
+# while registry errors use upper-case codes ("UNAUTHORIZED:", "DENIED:").
+# A missing signature (MANIFEST_UNKNOWN on the .sig tag) is a real policy failure,
+# so it is deliberately not matched here.
+is_registry_error() { grep -qE "UNAUTHORIZED|DENIED:|authentication required|no such host" <<<"$1"; }
 
 echo "==> Checking policies are installed and ready"
 for p in require-signed-images require-data-classification-labels \
@@ -47,6 +55,7 @@ expect_admit() {
   else
     bad "$(basename "${file}") was rejected but should be admitted:"
     echo "${out}" | sed 's/^/          /'
+    is_registry_error "${out}" && registry_hint=true
   fi
 }
 
@@ -56,6 +65,10 @@ expect_reject() {
   if out="$(render "${file}" | kubectl apply -f - 2>&1)"; then
     bad "$(basename "${file}") was admitted but should be rejected by ${policy}"
     render "${file}" | kubectl delete -f - --ignore-not-found >/dev/null 2>&1
+  elif is_registry_error "${out}"; then
+    bad "$(basename "${file}") rejected only because Kyverno could not access the registry:"
+    echo "${out}" | sed 's/^/          /'
+    registry_hint=true
   elif grep -q "${policy}" <<<"${out}"; then
     ok "$(basename "${file}") rejected by ${policy}"
   else
@@ -81,6 +94,13 @@ if [[ "${image}" == *@sha256:* ]]; then ok "compliant-app image is ${image}"; el
 if [[ "${CLEANUP}" == "true" ]]; then
   echo "==> Cleaning up demo namespaces"
   kubectl delete -f "${MANIFESTS}/namespace.yaml" --ignore-not-found
+fi
+
+if [[ "${registry_hint}" == "true" ]]; then
+  echo ""
+  echo "HINT: Kyverno could not pull from ${IMAGE_REPO%%/*}. If this is GHCR, make the package"
+  echo "      public: GitHub -> Packages -> $(basename "${IMAGE_REPO}") -> Package settings -> Change visibility."
+  echo "      Also check that sign-and-scan.sh pushed both :signed and :unsigned to ${IMAGE_REPO}."
 fi
 
 echo ""

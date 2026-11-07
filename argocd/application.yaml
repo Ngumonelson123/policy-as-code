@@ -1,6 +1,8 @@
-# Optional: wire the compliant manifests through Argo CD instead of kubectl apply.
-# Only add this if time allows — the policy enforcement is the real demo,
-# not the delivery mechanism.
+# GitOps delivery: Argo CD syncs deploy/ from Git into demo-fintech.
+# Kyverno still checks everything Argo CD applies — a Deployment whose
+# image isn't signed with our key is rejected exactly like `kubectl apply`.
+#
+# argocd/install.sh replaces REPLACE_WITH_GIT_REMOTE with your repo URL.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -11,7 +13,7 @@ spec:
   source:
     repoURL: "REPLACE_WITH_GIT_REMOTE"
     targetRevision: main
-    path: manifests/compliant
+    path: deploy
   destination:
     server: "https://kubernetes.default.svc"
     namespace: demo-fintech
@@ -19,5 +21,16 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    # Argo CD creates the namespace with the label that marks it as approved
+    # for restricted/confidential data (restrict-to-approved-namespaces).
+    managedNamespaceMetadata:
+      labels:
+        data-residency: approved
     syncOptions:
-      - CreateNamespace=false
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

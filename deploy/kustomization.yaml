@@ -1,0 +1,12 @@
+# What Argo CD deploys. The GitHub Actions workflow rewrites images[0] after
+# every signed build, so Git always records exactly which signed digest runs.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: demo-fintech
+resources:
+  - deployment.yaml
+  - service.yaml
+images:
+  - name: policy-as-code-dpa-app
+    newName: ghcr.io/ngumonelson123/policy-as-code-dpa-app
+    digest: sha256:32215462294afda0a860fbce7213c325cc308768fc01fffd51028c6bc92dbea5

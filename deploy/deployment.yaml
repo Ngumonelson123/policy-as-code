@@ -1,0 +1,48 @@
+# Compliant workload delivered through GitOps (Argo CD).
+# Kyverno auto-generates Deployment versions of the Pod policies, so this is
+# checked for labels, non-root, no privilege, and a valid Cosign signature.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dpa-app
+  labels:
+    app: dpa-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dpa-app
+  template:
+    metadata:
+      labels:
+        app: dpa-app
+        data-classification: internal
+        owner: platform-team
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          # Placeholder name; kustomization.yaml replaces it with the signed digest.
+          image: policy-as-code-dpa-app
+          ports:
+            - containerPort: 8000
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
