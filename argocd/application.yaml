@@ -1,7 +1,6 @@
 # GitOps delivery: Argo CD syncs deploy/ from Git into demo-fintech.
 # Kyverno still checks everything Argo CD applies — a Deployment whose
 # image isn't signed with our key is rejected exactly like `kubectl apply`.
-#
 # argocd/install.sh replaces REPLACE_WITH_GIT_REMOTE with your repo URL.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
