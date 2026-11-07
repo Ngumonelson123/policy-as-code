@@ -9,4 +9,4 @@ resources:
 images:
   - name: policy-as-code-dpa-app
     newName: ghcr.io/ngumonelson123/policy-as-code-dpa-app
-    digest: sha256:bc1a4299359b6a7fe932edf9b413a8108dc0348183c17b579a05bebcc491b008
+    digest: sha256:54556b98675b8f1d8b0d6174578f61b91a21112a9e0815fcfbc909e5e7c461c6
