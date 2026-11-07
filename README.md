@@ -425,12 +425,17 @@ image and push, as if someone tried to sneak it in through Git.
 ```bash
 git pull
 yq -i '.images[0].newTag = "unsigned" | del(.images[0].digest)' deploy/kustomization.yaml   # or edit the file by hand
-git commit -am "demo: try to deploy an unsigned image" && git push
+git commit -am "demo: try to deploy an unsigned image [skip ci]" && git push
 ```
+
+`[skip ci]` stops GitHub Actions from running for this commit. Without it,
+the pipeline would build and sign a fresh image and overwrite the unsigned
+reference within a minute.
 
 **You should see:** Argo CD's sync **fails** with Kyverno's
 `require-signed-images` message, while the signed version keeps running.
-Undo it with `git revert HEAD && git push`.
+Undo it with `git revert --no-edit HEAD && git push`. That push runs the
+pipeline again and restores a signed digest.
 
 ---
 
