@@ -11,7 +11,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: "REPLACE_WITH_GIT_REMOTE"
+    repoURL: "https://github.com/Ngumonelson123/policy-as-code"
     targetRevision: main
     path: deploy
   destination:
