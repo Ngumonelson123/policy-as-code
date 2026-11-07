@@ -24,7 +24,23 @@ for tool in kubectl helm; do
   [[ -n "${path}" ]] || { echo "ERROR: '${tool}' is not installed or not on PATH." >&2; exit 1; }
   [[ -x "${path}" ]] || { echo "ERROR: ${path} is not executable. Run: chmod +x ${path}" >&2; exit 1; }
 done
-[[ -n "${REPO_URL}" ]] || { echo "ERROR: set REPO_URL, e.g. export REPO_URL=https://github.com/<you>/policy-as-code-dpa.git" >&2; exit 1; }
+# Work out the repo URL: $REPO_URL, else this checkout's `origin` remote,
+# else whatever is already written in application.yaml.
+if [[ -z "${REPO_URL}" ]]; then
+  REPO_URL="$(git -C "${SCRIPT_DIR}/.." remote get-url origin 2>/dev/null || true)"
+  # Argo CD can't use SSH remotes without a key; convert git@github.com:x/y to https.
+  if [[ "${REPO_URL}" == git@github.com:* ]]; then
+    REPO_URL="https://github.com/${REPO_URL#git@github.com:}"
+  fi
+fi
+if [[ -z "${REPO_URL}" ]]; then
+  REPO_URL="$(sed -n 's/^ *repoURL: *"\{0,1\}\([^"]*\)"\{0,1\} *$/\1/p' "${SCRIPT_DIR}/application.yaml" | head -1)"
+fi
+if [[ -z "${REPO_URL}" || "${REPO_URL}" == "REPLACE_WITH_GIT_REMOTE" ]]; then
+  echo "ERROR: could not determine the Git repo URL." >&2
+  echo "       Set it, e.g. export REPO_URL=https://github.com/<you>/<repo>.git" >&2
+  exit 1
+fi
 
 echo "==> Installing Argo CD (Dex and notifications disabled to save memory)"
 helm repo add argo https://argoproj.github.io/argo-helm --force-update >/dev/null
@@ -37,7 +53,7 @@ helm upgrade --install argocd argo/argo-cd \
   --wait --timeout 10m
 
 echo "==> Registering the Application (repo: ${REPO_URL}, branch: ${REVISION})"
-sed -e "s|REPLACE_WITH_GIT_REMOTE|${REPO_URL}|" \
+sed -e "s|^\( *repoURL:\).*|\1 \"${REPO_URL}\"|" \
     -e "s|targetRevision: main|targetRevision: ${REVISION}|" \
     "${SCRIPT_DIR}/application.yaml" | kubectl apply -f -
 

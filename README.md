@@ -382,8 +382,8 @@ kubectl kustomize deploy | kubectl apply --dry-run=server -f -
 kubectl kustomize deploy | sed 's|policy-as-code-dpa-app@sha256:[0-9a-f]*|policy-as-code-dpa-app:unsigned|' \
   | kubectl apply --dry-run=server -f -
 
-export REPO_URL=https://github.com/$GH_USER/policy-as-code-dpa.git
-./argocd/install.sh
+./argocd/install.sh     # repo URL is taken from your `origin` remote
+# or set it explicitly: REPO_URL=https://github.com/<you>/<repo>.git ./argocd/install.sh
 ```
 
 **You should see:** `sync=Synced health=Healthy`, then the Argo CD login
