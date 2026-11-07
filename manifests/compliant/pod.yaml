@@ -13,6 +13,6 @@ spec:
     runAsUser: 1000
   containers:
     - name: app
-      image: ghcr.io/REPLACE_ORG/policy-as-code-dpa-app:signed
+      image: ghcr.io/ngumonelson123/policy-as-code-dpa-app:signed
       securityContext:
         privileged: false
